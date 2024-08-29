@@ -1,202 +1,237 @@
 #include <iostream>
 #include <vector>
+#include <string>
 using namespace std;
 
-// Data structure to store a graph edge
+// Estructura de datos para almacenar una arista de un grafo
 struct Edge {
     int src, dest;
 };
 
-// A class to represent a graph object
-class Graph
-{
+// Una clase para representar un objeto de grafo
+class Graph {
 public:
-    // a vector of vectors to represent an adjacency list
+    // un vector de vectores para representar una lista de adyacencia
     vector<vector<int>> adjList;
 
-    // stores indegree of a vertex
+    // almacena el grado de entrada de un vértice
     vector<int> indegree;
 
-    // Graph Constructor
-    Graph(vector<Edge> const& edges, int n)
-    {
-        // resize the vector to hold `n` elements of type `vector<int>`
+    // Constructor del grafo
+    Graph(vector<Edge> const& edges, int n) {
+        // redimensiona el vector para contener `n` elementos de tipo `vector<int>`
         adjList.resize(n);
 
-        // initialize indegree
+        // inicializa el grado de entrada
         vector<int> temp(n, 0);
         indegree = temp;
 
-        // add edges to the directed graph
-        for (auto& edge : edges)
-        {
-            // add an edge from source to destination
+        // agrega aristas al grafo dirigido
+        for (auto& edge : edges) {
+            // agrega una arista desde la fuente hasta el destino
             adjList[edge.src].push_back(edge.dest);
 
-            // increment in-degree of destination vertex by 1
+            // incrementa el grado de entrada del vértice destino en 1
             indegree[edge.dest]++;
         }
     }
 };
 
-// Function to perform a topological sort on a given DAG
-vector<int> doTopologicalSort(Graph const& graph)
-{
+// Función para realizar un ordenamiento topológico en un DAG dado
+vector<int> doTopologicalSort(Graph const& graph) {
     vector<int> L;
 
-    // get the total number of nodes in the graph
+    // obtiene el número total de nodos en el grafo
     int n = graph.adjList.size();
 
     vector<int> indegree = graph.indegree;
 
-    // Set of all nodes with no incoming edges
+    // Conjunto de todos los nodos sin aristas entrantes
     vector<int> S;
-    for (int i = 0; i < n; i++)
-    {
+    for (int i = 0; i < n; i++) {
         if (!indegree[i]) {
             S.push_back(i);
         }
     }
 
-    while (!S.empty())
-    {
-        // remove node `n` from `S`
+    while (!S.empty()) {
+        // elimina el nodo `n` de `S`
         int n = S.back();
         S.pop_back();
 
-        // add `n` at the tail of `L`
+        // agrega `n` al final de `L`
         L.push_back(n);
 
-        for (int m : graph.adjList[n])
-        {
-            // remove an edge from `n` to `m` from the graph
+        for (int m : graph.adjList[n]) {
+            // elimina una arista de `n` a `m` del grafo
             indegree[m] -= 1;
 
-            // if `m` has no other incoming edges, insert `m` into `S`
+            // si `m` no tiene otras aristas entrantes, inserta `m` en `S`
             if (!indegree[m]) {
                 S.push_back(m);
             }
         }
     }
 
-    // if a graph has edges, then the graph has at least one cycle
-    for (int i = 0; i < n; i++)
-    {
+    // si un grafo tiene aristas, entonces el grafo tiene al menos un ciclo
+    for (int i = 0; i < n; i++) {
         if (indegree[i]) {
             return {};
         }
     }
 
     return L;
-} 
+}
 
-int main()
-{
-    // Inicialización de variables
-    vector<Edge> materias;
-    int cantidadMaterias;
-    cout << "Ingrese la cantidad de materias: ";
-    cin >> cantidadMaterias;
+// Función para agregar una nueva asignatura
+void addSubject(vector<Edge>& subjects, string subjectName, vector<string>& subjectNames, int& totalSubjects) {
+    int numDependencies;
 
-    // Array dinamico con las materias
-    string* nombreMaterias = new string[cantidadMaterias+1];
-    for (int i = 0; i < cantidadMaterias; i++) {
-        cout << "Ingrese el nombre de la materia " << i << endl;
-        cin >> nombreMaterias[i];
+    cout << "Ingrese el número de dependencias para la asignatura " << subjectName << ": ";
+    cin >> numDependencies;
+
+    // Agrega la nueva asignatura
+    subjectNames.push_back(subjectName);
+    totalSubjects++;
+
+    // Agrega dependencias
+    for (int j = 0; j < numDependencies; j++) {
+        cout << "Ingrese la dependencia " << j + 1 << " para la asignatura " << subjectName << ": ";
+        string dependency;
+        cin >> dependency;
+        // Encuentra el índice de la asignatura
+        int k = 0;
+        while (subjectNames[k] != dependency) {
+            k++;
+        }
+        Edge edge = { k, totalSubjects - 1 };
+        subjects.push_back(edge);
     }
-    int cantidadDependencias;
 
+    // Crea un nuevo grafo con las asignaturas actualizadas
+    Graph graph(subjects, totalSubjects);
+    vector<int> L = doTopologicalSort(graph);
 
-    // Inicializar dependencias de las materias 
-    for (int i = 0; i < cantidadMaterias; i++)
-    {
-        cout << "Ingrese cantidad de dependencias de la materia " << nombreMaterias[i] << ": ";
-        cin >> cantidadDependencias;
-        for (int j = 0; j < cantidadDependencias; j++)
-        {
-            cout << "Ingrese la dependencia " << j << " de la materia " << nombreMaterias[i] << ": ";
-            string dependencia;
-            cin >> dependencia;
-            //Buscar materia
+    // Imprime el orden topológico
+    cout << "El orden de las asignaturas es el siguiente: " << endl;
+    if (L.size()) {
+        for (int i : L) {
+            cout << subjectNames[i] << " --> ";
+        }
+        cout << "Fin" << endl;
+    }
+    else {
+        cout << "El orden topológico no es posible" << endl;
+    }
+}
+
+int main() {
+    // Inicialización de variables
+    vector<Edge> subjects;
+    int totalSubjects;
+
+    cout << "Ingrese el número de asignaturas: ";
+    cin >> totalSubjects;
+
+    // Array dinámico para asignaturas
+    vector<string> subjectNames(totalSubjects);
+
+    for (int i = 0; i < totalSubjects; i++) {
+        cout << "Ingrese el nombre de la asignatura " << i + 1 << ": ";
+        cin >> subjectNames[i];
+    }
+
+    int numDependencies;
+
+    // Inicializa las dependencias de las asignaturas
+    for (int i = 0; i < totalSubjects; i++) {
+        cout << "Ingrese el número de dependencias para la asignatura " << subjectNames[i] << ": ";
+        cin >> numDependencies;
+        for (int j = 0; j < numDependencies; j++) {
+            cout << "Ingrese la dependencia " << j + 1 << " para la asignatura " << subjectNames[i] << ": ";
+            string dependency;
+            cin >> dependency;
+            // Encuentra el índice de la asignatura
             int k = 0;
-            while (nombreMaterias[k] != dependencia) {
+            while (subjectNames[k] != dependency) {
                 k++;
             }
             Edge edge = { k, i };
-            materias.push_back(edge);
+            subjects.push_back(edge);
         }
     }
 
-    // Inicializacion del grafo 
-    Graph graph(materias, cantidadMaterias);
+    // Inicializa el grafo
+    Graph graph(subjects, totalSubjects);
 
-    // Perform topological sort
+    // Realiza el ordenamiento topológico
     vector<int> L = doTopologicalSort(graph);
 
-    // print topological order
-    cout << "El recorrido de materias es el siguientes: " << endl;
+    // Imprime el orden topológico
+    cout << "El orden de las asignaturas es el siguiente: " << endl;
     if (L.size()) {
         for (int i : L) {
-            cout << nombreMaterias[i] << " --> ";
+            cout << subjectNames[i] << " --> ";
         }
+        cout << "Fin" << endl;
     }
     else {
-        cout << "Orden topologico no es posible";
+        cout << "El orden topológico no es posible" << endl;
     }
 
-    // Opcion de agregar y eliminar materias
-    int stop = 1;
-    string nombreMateria;
+    // Opción para agregar y eliminar asignaturas
+    int option;
 
-    while (stop != 0)
-    {
-        int opcion;
-        cout << "Ingrese 1 para agregar una materia o 2 para eliminar una materia (0 para salir): ";
-        cin >> opcion;
+    while (true) {
+        cout << "Ingrese 1 para agregar una asignatura, 2 para eliminar una asignatura (0 para salir): ";
+        cin >> option;
 
-        if (opcion == 1)
-        {
-            cout << "Ingrese el nombre de la materia: ";
-            cin >> nombreMateria;
-            nombreMaterias[cantidadMaterias] = nombreMateria;
-            cantidadMaterias++;
-
-            cout << "Ingrese cantidad de dependencias de la materia " << nombreMateria << ": ";
-            cin >> cantidadDependencias;
-            for (int j = 0; j < cantidadDependencias; j++)
-            {
-                cout << "Ingrese la dependencia " << j << " de la materia " << nombreMateria << ": ";
-                string dependencia;
-                cin >> dependencia;
-                //Buscar materia
-                int k = 0;
-                while (nombreMaterias[k] != dependencia) {
-                    k++;
-                }
-                Edge edge = { k, cantidadMaterias };
-                materias.push_back(edge);
+        if (option == 1) {
+            string subjectName;
+            cout << "Ingrese el nombre de la asignatura: ";
+            cin >> subjectName;
+            addSubject(subjects, subjectName, subjectNames, totalSubjects);
+        }
+        else if (option == 2) {
+            string subjectName;
+            cout << "Ingrese el nombre de la asignatura para eliminar: ";
+            cin >> subjectName;
+            // Encuentra el índice de la asignatura
+            int k = 0;
+            while (subjectNames[k] != subjectName) {
+                k++;
             }
-
-            Graph graph1(materias, cantidadMaterias);
-
-
-            vector<int> L = doTopologicalSort(graph1);
-
-            // print topological order
-            cout << "El recorrido de materias es el siguientes: " << endl;
+            subjectNames.erase(subjectNames.begin() + k);
+            totalSubjects--;
+            // Reconstruye el grafo después de eliminar la asignatura
+            vector<Edge> updatedSubjects;
+            for (Edge e : subjects) {
+                if (e.src != k && e.dest != k) {
+                    // Ajusta los índices para la lista de asignaturas actualizada
+                    if (e.src > k) e.src--;
+                    if (e.dest > k) e.dest--;
+                    updatedSubjects.push_back(e);
+                }
+            }
+            subjects = updatedSubjects;
+            Graph graph(subjects, totalSubjects);
+            L = doTopologicalSort(graph);
+            // Imprime el orden topológico
+            cout << "El orden de las asignaturas después de eliminar es el siguiente: " << endl;
             if (L.size()) {
                 for (int i : L) {
-                    cout << nombreMaterias[i] << " --> ";
+                    cout << subjectNames[i] << " --> ";
                 }
+                cout << "Fin" << endl;
             }
             else {
-                cout << "Orden topologico no es posible";
+                cout << "El orden topológico no es posible" << endl;
             }
         }
-
-        // Liberar memoria
-        delete[] nombreMaterias;
-
-        return 0;
+        else if (option == 0) {
+            break;
+        }
     }
+
+    return 0;
 }
